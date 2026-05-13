@@ -7,7 +7,7 @@ import re
 # --- Page Config ---
 st.set_page_config(page_title="LARS File Merger", layout="wide") 
 
-st.title("📊 LARS Cumulative File Merger & Dashboard")
+st.title("📊 ATR Remediation Status & Dashboard")
 st.write("Upload the three Observation files (CSV format) to format, merge, map columns, and generate the dashboard.")
 
 # --- File Uploaders ---
