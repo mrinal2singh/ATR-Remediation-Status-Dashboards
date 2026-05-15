@@ -3,12 +3,46 @@ import pandas as pd
 import os
 import io
 import re
+import plotly.express as px
+
+# --- Constants ---
+LAST_RUN_FILE = "last_run_data.pkl"
 
 # --- Page Config ---
 st.set_page_config(page_title="LARS File Merger", layout="wide") 
 
+# --- Custom CSS to fit screen and reduce font sizes ---
+st.markdown("""
+    <style>
+        .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            max-width: 98%;
+        }
+        h3 {
+            font-size: 1.1rem !important;
+            padding-bottom: 0.2rem !important;
+        }
+        p {
+            font-size: 0.9rem !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("📊 ATR Remediation Status & Dashboard")
 st.write("Upload the three Observation files (CSV format) to format, merge, map columns, and generate the dashboard.")
+
+# --- Session State Initialization ---
+if 'cumulative_df' not in st.session_state:
+    if os.path.exists(LAST_RUN_FILE):
+        try:
+            st.session_state['cumulative_df'] = pd.read_pickle(LAST_RUN_FILE)
+        except Exception:
+            st.session_state['cumulative_df'] = None
+    else:
+        st.session_state['cumulative_df'] = None
 
 # --- File Uploaders ---
 col1, col2, col3 = st.columns(3)
@@ -22,7 +56,7 @@ with col3:
 
 st.divider()
 
-# --- FY Mapping Function ---
+# --- Functions ---
 def map_fy_chk(fy_value):
     val = str(fy_value).strip() 
     if val in ['Q1 FY24-25', 'Q2 FY24-25', 'Q3 FY24-25', 'Q4 FY24-25', 'Q4 FY23-24']:
@@ -40,11 +74,8 @@ def map_fy_chk(fy_value):
     else:
         return ""
 
-# --- Safe CSV Reader (Handles Encoding Errors) ---
 def read_csv_safely(uploaded_file):
-    """Attempts to read the CSV file using various common enterprise encodings."""
     encodings = ['utf-8', 'cp1252', 'latin1', 'iso-8859-1']
-    
     for enc in encodings:
         try:
             uploaded_file.seek(0) 
@@ -52,10 +83,8 @@ def read_csv_safely(uploaded_file):
             return df
         except UnicodeDecodeError:
             continue
-            
     raise ValueError("Could not decode the CSV file. Please check the file format.")
 
-# --- Text Sanitizer ---
 ILLEGAL_CHARS_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]')
 
 def clean_text(val):
@@ -63,11 +92,9 @@ def clean_text(val):
         return ILLEGAL_CHARS_RE.sub('', val).strip()
     return val
 
-# --- Validation Mapping Function ---
 def map_validation_m(val):
     if pd.isna(val):
         return ""
-    
     val_str = str(val).strip()
     s_lower = val_str.lower()
     
@@ -86,19 +113,14 @@ def map_validation_m(val):
     else:
         return val_str
 
-# --- Timeline Date Extraction Function ---
 def extract_highest_date(val):
     if pd.isna(val) or str(val).strip() == "":
         return "Timeline not available"
-    
     text = str(val)
     date_pattern = r'\b(?:\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}[\s.-]+[A-Za-z]{3,9}[\s.-]+\d{2,4})\b'
-    
     matches = re.findall(date_pattern, text)
-    
     if not matches:
         return "Timeline not available"
-        
     valid_dates = []
     for match in matches:
         try:
@@ -106,7 +128,6 @@ def extract_highest_date(val):
             valid_dates.append(dt)
         except Exception:
             pass 
-            
     if valid_dates:
         max_dt = max(valid_dates)
         return max_dt.strftime('%d-%b-%Y') 
@@ -132,12 +153,10 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     df = read_csv_safely(uploaded_file)
                     df.columns = [clean_text(str(c)) for c in df.columns]
                     df = df.dropna(how='all').dropna(axis=1, how='all')
-                    
                     try:
                         df = df.map(clean_text)
                     except AttributeError:
                         df = df.applymap(clean_text)
-                    
                     df['File source'] = source_name
                     processed_dfs.append(df)
                 except Exception as e:
@@ -151,137 +170,99 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             
             if 'FY' in cumulative_df.columns:
                 cumulative_df.rename(columns={'FY': 'Quarter Reported'}, inplace=True)
-            
             if 'Quarter Reported' in cumulative_df.columns:
                 cumulative_df['FY_chk'] = cumulative_df['Quarter Reported'].apply(map_fy_chk)
             else:
                 st.warning("Column 'Quarter Reported' (formerly 'FY') not found. 'FY_chk' column cannot be populated.")
             
-            # --- Calculate Unique Count & Apply Overrides ---
             st.write("Calculating Unique Count & applying overrides...")
             required_cols = ['FY_chk', 'Audit Area', 'Observation Title']
-            
             missing_cols = [col for col in required_cols if col not in cumulative_df.columns]
+            
             if not missing_cols:
                 group_counts = cumulative_df.groupby(required_cols, dropna=False)['FY_chk'].transform('size')
                 cumulative_df['Unique Count'] = 1.0 / group_counts
-                
-                obs_col_name = None
-                for col in cumulative_df.columns:
-                    if 'unique observation' in col.lower():
-                        obs_col_name = col
-                        break
+                obs_col_name = next((col for col in cumulative_df.columns if 'unique observation' in col.lower()), None)
                 
                 if obs_col_name:
                     obs_series = cumulative_df[obs_col_name].astype(str).str.strip().str.replace('.0', '', regex=False)
-                    
                     zero_count_ids = [
-                        '1189', '1168', '759', '354', '353', 
-                        '137', '136', '135', '1165', '1164', 
-                        '1163', '771', '757', '717', '698'
+                        '1189', '1168', '759', '354', '353', '137', '136', '135', '1165', '1164', '1163', '771', '757', '717', '698'
                     ]
                     mask_zero = obs_series.isin(zero_count_ids)
                     cumulative_df.loc[mask_zero, 'Unique Count'] = 0.0
                     
                     explicit_overrides = {
-                        '1129': 0.5, '1102': 0.5, '1126': 0.5, '1099': 0.5, '1124': 0.5,
-                        '1032': 0.333333, '1016': 0.333333, '999': 0.333333, '912': 0.5,
-                        '1023': 0.05, '1006': 0.05, '987': 0.05, '1029': 0.05, '1028': 0.05,
-                        '1027': 0.05, '1026': 0.05, '1025': 0.05, '1024': 0.05, '1022': 0.05,
-                        '1012': 0.05, '1011': 0.05, '1010': 0.05, '1009': 0.05, '1008': 0.05,
-                        '1007': 0.05, '1005': 0.05, '988': 0.05, '986': 0.05, '697': 0.5,
-                        '695': 0.5, '693': 0.5, '683': 0.5, '606': 0.5, '605': 0.5, '604': 0.5,
-                        '603': 0.5, '602': 0.5, '601': 0.5, '600': 0.5, '599': 0.5, '598': 0.5,
-                        '597': 0.5, '596': 0.5, '595': 0.5, '594': 0.5, '593': 0.5, '592': 0.5,
-                        '591': 0.5, '590': 0.5, '589': 0.5, '588': 0.5, '587': 0.5, '571': 0.5,
-                        '570': 0.5, '569': 0.5, '562': 0.5, '561': 0.5, '560': 0.5, '559': 0.5,
-                        '552': 0.5, '459': 0.5, '450': 0.5, '449': 0.5, '448': 0.5, '447': 0.5,
-                        '278': 0.5, '269': 0.5, '268': 0.5, '267': 0.5, '238': 0.5, '237': 0.5,
-                        '236': 0.5, '235': 0.5, '234': 0.5, '233': 0.5, '232': 0.5, '231': 0.5,
-                        '230': 0.5, '171': 0.5, '170': 0.5, '169': 0.5, '168': 0.5, '167': 0.5,
-                        '166': 0.5, '165': 0.5, '164': 0.5, '163': 0.5, '162': 0.5, '161': 0.5,
-                        '160': 0.5, '159': 0.5, '158': 0.5, '157': 0.5, '156': 0.5, '155': 0.5,
-                        '154': 0.5, '153': 0.5, '152': 0.5, '151': 0.5, '1097': 0.5, '985': 0.05,
-                        '913': 0.5, '674': 0.5, '61': 1.0, '1122': 0.5, '1095': 0.5, '1128': 0.5,
-                        '1101': 0.5, '1123': 0.5, '1096': 0.5, '1125': 0.5, '1098': 0.5, '1127': 0.5,
-                        '1100': 0.5
+                        '1129': 0.5, '1102': 0.5, '1126': 0.5, '1099': 0.5, '1124': 0.5, '1032': 0.333333, '1016': 0.333333, '999': 0.333333, '912': 0.5,
+                        '1023': 0.05, '1006': 0.05, '987': 0.05, '1029': 0.05, '1028': 0.05, '1027': 0.05, '1026': 0.05, '1025': 0.05, '1024': 0.05, '1022': 0.05,
+                        '1012': 0.05, '1011': 0.05, '1010': 0.05, '1009': 0.05, '1008': 0.05, '1007': 0.05, '1005': 0.05, '988': 0.05, '986': 0.05, '697': 0.5,
+                        '695': 0.5, '693': 0.5, '683': 0.5, '606': 0.5, '605': 0.5, '604': 0.5, '603': 0.5, '602': 0.5, '601': 0.5, '600': 0.5, '599': 0.5, '598': 0.5,
+                        '597': 0.5, '596': 0.5, '595': 0.5, '594': 0.5, '593': 0.5, '592': 0.5, '591': 0.5, '590': 0.5, '589': 0.5, '588': 0.5, '587': 0.5, '571': 0.5,
+                        '570': 0.5, '569': 0.5, '562': 0.5, '561': 0.5, '560': 0.5, '559': 0.5, '552': 0.5, '459': 0.5, '450': 0.5, '449': 0.5, '448': 0.5, '447': 0.5,
+                        '278': 0.5, '269': 0.5, '268': 0.5, '267': 0.5, '238': 0.5, '237': 0.5, '236': 0.5, '235': 0.5, '234': 0.5, '233': 0.5, '232': 0.5, '231': 0.5,
+                        '230': 0.5, '171': 0.5, '170': 0.5, '169': 0.5, '168': 0.5, '167': 0.5, '166': 0.5, '165': 0.5, '164': 0.5, '163': 0.5, '162': 0.5, '161': 0.5,
+                        '160': 0.5, '159': 0.5, '158': 0.5, '157': 0.5, '156': 0.5, '155': 0.5, '154': 0.5, '153': 0.5, '152': 0.5, '151': 0.5, '1097': 0.5, '985': 0.05,
+                        '913': 0.5, '674': 0.5, '61': 1.0, '1122': 0.5, '1095': 0.5, '1128': 0.5, '1101': 0.5, '1123': 0.5, '1096': 0.5, '1125': 0.5, '1098': 0.5, '1127': 0.5, '1100': 0.5
                     }
-                    
                     for obs_id, override_val in explicit_overrides.items():
                         mask_explicit = (obs_series == obs_id)
                         cumulative_df.loc[mask_explicit, 'Unique Count'] = override_val
                 else:
                     st.warning("Could not find a column containing 'Unique observation' to apply the overrides.")
-
             else:
                 st.warning(f"Could not calculate 'Unique Count'. Missing columns: {', '.join(missing_cols)}")
             
-            # --- Create Timeline(M) Column ---
             st.write("Applying Timeline(M) date extraction logic...")
             timeline_col = None
             for col in cumulative_df.columns:
                 if 'revised timeline' in col.lower() and 'incident solution' in col.lower():
                     timeline_col = col
                     break
-            
             if not timeline_col:
                 for col in cumulative_df.columns:
                     if 'revised timeline' in col.lower():
                         timeline_col = col
                         break
-
             if timeline_col:
                 cumulative_df['Timeline(M)'] = cumulative_df[timeline_col].apply(extract_highest_date)
             else:
                 st.warning("Could not find a 'Revised Timeline' column. Populating 'Timeline(M)' with default values.")
                 cumulative_df['Timeline(M)'] = "Timeline not available"
 
-            # --- Create Validation(M) Column ---
             st.write("Applying Validation(M) column logic...")
-            val_status_col = None
-            for col in cumulative_df.columns:
-                if 'validation status' in col.lower():
-                    val_status_col = col
-                    break
-            
+            val_status_col = next((col for col in cumulative_df.columns if 'validation status' in col.lower()), None)
             if val_status_col:
                 cumulative_df['Validation(M)'] = cumulative_df[val_status_col].apply(map_validation_m)
             else:
                 st.warning("Could not find a 'Validation Status' column. Skipping 'Validation(M)' creation.")
                 cumulative_df['Validation(M)'] = ""
 
-            # --- Apply Dynamic Near Due / Overdue Override ---
             st.write("Calculating Near Due timelines...")
             today_date = pd.to_datetime('today').normalize()
             
             def apply_near_due_override(row):
                 current_val = row['Validation(M)']
                 tl_str = str(row['Timeline(M)'])
-                
                 s_lower = str(current_val).lower()
-                if 'remediated' in s_lower or 'not due' in s_lower or 'closed' in s_lower:
+                
+                if 'remediated' in s_lower or 'closed' in s_lower or 'validated' in s_lower:
                     return current_val
                 
                 if tl_str != "Timeline not available":
                     try:
                         dt = pd.to_datetime(tl_str, format='%d-%b-%Y')
                         days_diff = (dt - today_date).days
-                        
                         if 0 <= days_diff <= 15:
                             return 'Near Due'
                         elif days_diff < 0:
                             return 'Overdue'
-                            
                     except Exception:
                         pass
-                        
                 return current_val
                 
             cumulative_df['Validation(M)'] = cumulative_df.apply(apply_near_due_override, axis=1)
 
-            # --- Create Team Column ---
             st.write("Applying Team assignment logic...")
-            
             lead_auditor_col = next((col for col in cumulative_df.columns if 'lead auditor' in col.lower()), None)
             reviewer_col = next((col for col in cumulative_df.columns if 'reviewer' in col.lower()), None)
             
@@ -294,19 +275,14 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                         'oclia Deloitte2 (Oclia.Deloitte2)'
                     ]
                     deloitte_keywords = [k.lower() for k in deloitte_keywords]
-                    if any(keyword in la_val for keyword in deloitte_keywords):
-                        return 'Deloitte'
-
+                    if any(keyword in la_val for keyword in deloitte_keywords): return 'Deloitte'
                 if reviewer_col and pd.notna(row[reviewer_col]):
                     rev_val = str(row[reviewer_col]).strip().lower()
-                    if 'sameeksha' in rev_val:
-                        return 'IT Team'
-
+                    if 'sameeksha' in rev_val: return 'IT Team'
                 return 'In House'
 
             cumulative_df['Team'] = cumulative_df.apply(map_team, axis=1)
 
-            # --- Create Allocated Column ---
             st.write("Applying Allocation mapping...")
             if obs_col_name: 
                 allocation_mapping = {
@@ -493,16 +469,18 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                 st.warning("Could not find 'Unique observation No' to map Allocations.")
                 cumulative_df['Allocated'] = 'Unallocated'
 
-            # --- Final Team Overrides based on Allocation ---
             st.write("Applying final Team overrides...")
             mask = (cumulative_df['Allocated'].str.strip().str.lower() == 'sameeksha') & \
                    (cumulative_df['Team'].str.strip().str.lower() == 'in house')
             cumulative_df.loc[mask, 'Team'] = 'IT Team'
 
-            # --- Output to Excel ---
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 cumulative_df.to_excel(writer, index=False)
+            
+            # Save to Local File and Session State for auto-populate feature
+            cumulative_df.to_pickle(LAST_RUN_FILE)
+            st.session_state['cumulative_df'] = cumulative_df
             
             status.update(label="✅ Processing Complete!", state="complete", expanded=False)
             st.success("Files successfully merged, sanitized, and updated with Team & Allocation mapping!")
@@ -514,140 +492,181 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 type="primary"
             )
-
         else:
             status.update(label="❌ No files to process", state="error")
             st.error("Please upload at least one file to process.")
             
-    # --- DASHBOARD GENERATION ---
-    if processed_dfs and 'cumulative_df' in locals():
-        st.divider()
-        st.header("📈 Dashboard")
-        
-        fy_cols = ['FY 2024-25', 'Q1', 'Q2', 'Q3', 'Q4']
-        deep_blue = "#002060"
-        
-        # Deep Blue styling for the Table Headers
-        header_styles = [{
-            'selector': 'th',
-            'props': [('background-color', deep_blue), ('color', 'white'), ('font-weight', 'bold')]
-        }]
-        
-        # Function to style Footer / Total rows
-        def style_totals_row(row):
-            is_total = False
-            # Check row index names (for pivot tables)
-            if hasattr(row, 'name'):
-                if isinstance(row.name, tuple):
-                    if 'Total' in str(row.name[0]): is_total = True
-                elif 'Total' in str(row.name): is_total = True
-            
-            # Check row column values (for detail tables)
-            if 'Allocated' in row.index and 'Total' in str(row['Allocated']):
-                is_total = True
-                
-            if is_total:
-                return [f'background-color: {deep_blue}; color: white; font-weight: bold'] * len(row)
-            return [''] * len(row)
+# --- DASHBOARD GENERATION ---
+if st.session_state['cumulative_df'] is not None:
+    cumulative_df = st.session_state['cumulative_df']
+    
+    st.divider()
+    st.header("📈 Dashboard")
+    
+    # --- ROW 1: Donut Charts ---
+    chart_col1, chart_col2, chart_col3 = st.columns(3)
 
-        # Reusable Pivot Builder
-        def create_summary_pivot(df, status_filter):
-            f_df = df[df['Validation(M)'].str.lower() == status_filter.lower()]
-            pt = pd.pivot_table(f_df, values='Unique Count', index=['Team', 'Allocated'], columns='FY_chk', aggfunc='sum', fill_value=0)
-            pt = pt.reindex(columns=fy_cols, fill_value=0)
-            
-            all_combos = df[['Team', 'Allocated']].drop_duplicates().set_index(['Team', 'Allocated'])
-            pt = all_combos.join(pt, how='left').fillna(0)
-            pt['Total'] = pt.sum(axis=1)
-            pt['Status'] = ''
-            
-            pt.loc[('Total', ''), :] = pt.sum(axis=0, numeric_only=True)
-            pt.fillna('', inplace=True) 
-            pt = pt.sort_index(level='Team', na_position='last')
-            return pt
+    with chart_col1:
+        status_counts = cumulative_df.groupby('Validation(M)')['Unique Count'].sum().reset_index()
+        if not status_counts.empty and status_counts['Unique Count'].sum() > 0:
+            fig1 = px.pie(status_counts, values='Unique Count', names='Validation(M)', hole=0.5, title='Overall Status Distribution')
+            fig1.update_traces(textposition='inside', textinfo='percent+label')
+            # Updated height to 280 to reduce chart size
+            fig1.update_layout(showlegend=False, margin=dict(t=40, b=10, l=10, r=10), title_x=0.5, height=280)
+            st.plotly_chart(fig1, use_container_width=True)
 
-        # Reusable Details Builder
-        def create_details_table(df, status_filter):
-            f_df = df[df['Validation(M)'].str.lower() == status_filter.lower()]
-            if f_df.empty: return pd.DataFrame()
+    with chart_col2:
+        overdue_counts = cumulative_df[cumulative_df['Validation(M)'].str.lower() == 'overdue'].groupby('Allocated')['Unique Count'].sum().reset_index()
+        if not overdue_counts.empty and overdue_counts['Unique Count'].sum() > 0:
+            fig2 = px.pie(overdue_counts, values='Unique Count', names='Allocated', hole=0.5, title='Overdue by Allocated')
+            fig2.update_traces(textposition='inside', textinfo='percent+label')
+            # Updated height to 280 to reduce chart size
+            fig2.update_layout(showlegend=False, margin=dict(t=40, b=10, l=10, r=10), title_x=0.5, height=280)
+            st.plotly_chart(fig2, use_container_width=True)
+        else:
+            st.info("No Overdue Data for Chart")
+
+    with chart_col3:
+        neardue_counts = cumulative_df[cumulative_df['Validation(M)'].str.lower() == 'near due'].groupby('Allocated')['Unique Count'].sum().reset_index()
+        if not neardue_counts.empty and neardue_counts['Unique Count'].sum() > 0:
+            fig3 = px.pie(neardue_counts, values='Unique Count', names='Allocated', hole=0.5, title='Near Due by Allocated')
+            fig3.update_traces(textposition='inside', textinfo='percent+label')
+            # Updated height to 280 to reduce chart size
+            fig3.update_layout(showlegend=False, margin=dict(t=40, b=10, l=10, r=10), title_x=0.5, height=280)
+            st.plotly_chart(fig3, use_container_width=True)
+        else:
+            st.info("No Near Due Data for Chart")
+
+    st.divider()
+
+    # --- ROW 2: Pivot Tables ---
+    fy_cols = ['FY 2024-25', 'Q1', 'Q2', 'Q3', 'Q4']
+    deep_blue = "#002060" # Updated to Deep Blue
+    
+    header_styles = [{
+        'selector': 'th',
+        'props': [
+            ('background-color', deep_blue), 
+            ('color', 'white'), 
+            ('font-weight', 'bold'),
+            ('font-size', '13px'),
+            ('padding', '4px 8px')
+        ]
+    }]
+    
+    def style_totals_row(row):
+        is_total = False
+        if hasattr(row, 'name'):
+            if isinstance(row.name, tuple):
+                if 'Total' in str(row.name[0]): is_total = True
+            elif 'Total' in str(row.name): is_total = True
+        
+        if 'Allocated' in row.index and 'Total' in str(row['Allocated']):
+            is_total = True
             
-            f_df = f_df.sort_values(by=['Allocated', 'Audit Area', 'Observation Title'])
-            rows_list = []
-            
-            for allocated, group1 in f_df.groupby('Allocated', sort=False):
-                alloc_total = group1['Unique Count'].sum()
-                for audit_area, group2 in group1.groupby('Audit Area', sort=False):
-                    for obs_title, group3 in group2.groupby('Observation Title', sort=False):
-                        obs_total = group3['Unique Count'].sum()
-                        rows_list.append({
-                            'Allocated': allocated, 'Audit Area': audit_area,
-                            'Observation Title': obs_title, 'Total': obs_total
-                        })
-                rows_list.append({
-                    'Allocated': f'{allocated} Total', 'Audit Area': '',
-                    'Observation Title': '', 'Total': alloc_total
-                })
-                
-            grand_total = f_df['Unique Count'].sum()
+        if is_total:
+            return [f'background-color: {deep_blue}; color: white; font-weight: bold; font-size: 12px; padding: 4px;'] * len(row)
+        return [''] * len(row)
+
+    def apply_global_table_styles(styler_obj):
+        return styler_obj.set_properties(**{'font-size': '12px', 'padding': '4px 6px'})\
+                         .set_table_styles(header_styles)
+
+    def create_summary_pivot(df, status_filter):
+        f_df = df[df['Validation(M)'].str.lower() == status_filter.lower()]
+        pt = pd.pivot_table(f_df, values='Unique Count', index=['Team', 'Allocated'], columns='FY_chk', aggfunc='sum', fill_value=0)
+        pt = pt.reindex(columns=fy_cols, fill_value=0)
+        
+        all_combos = df[['Team', 'Allocated']].drop_duplicates().set_index(['Team', 'Allocated'])
+        pt = all_combos.join(pt, how='left').fillna(0)
+        pt['Total'] = pt.sum(axis=1)
+        pt['Status'] = ''
+        
+        pt.loc[('Total', ''), :] = pt.sum(axis=0, numeric_only=True)
+        pt.fillna('', inplace=True) 
+        pt = pt.sort_index(level='Team', na_position='last')
+        return pt
+
+    def create_details_table(df, status_filter):
+        f_df = df[df['Validation(M)'].str.lower() == status_filter.lower()]
+        if f_df.empty: return pd.DataFrame()
+        
+        f_df = f_df.sort_values(by=['Allocated', 'Audit Area', 'Observation Title'])
+        rows_list = []
+        
+        for allocated, group1 in f_df.groupby('Allocated', sort=False):
+            alloc_total = group1['Unique Count'].sum()
+            for audit_area, group2 in group1.groupby('Audit Area', sort=False):
+                for obs_title, group3 in group2.groupby('Observation Title', sort=False):
+                    obs_total = group3['Unique Count'].sum()
+                    rows_list.append({
+                        'Allocated': allocated, 'Audit Area': audit_area,
+                        'Observation Title': obs_title, 'Total': obs_total
+                    })
             rows_list.append({
-                'Allocated': 'Total', 'Audit Area': '', 'Observation Title': '', 'Total': grand_total
+                'Allocated': f'{allocated} Total', 'Audit Area': '',
+                'Observation Title': '', 'Total': alloc_total
             })
-            return pd.DataFrame(rows_list)
+            
+        grand_total = f_df['Unique Count'].sum()
+        rows_list.append({
+            'Allocated': 'Total', 'Audit Area': '', 'Observation Title': '', 'Total': grand_total
+        })
+        return pd.DataFrame(rows_list)
 
-        # --- Dashboard Layout (Row 1: Pivot Tables) ---
-        col_sum, col_overdue, col_near = st.columns(3)
+    col_sum, col_overdue, col_near = st.columns(3)
+    
+    with col_sum:
+        st.subheader("Count of observations noted in")
+        pt1 = pd.pivot_table(cumulative_df, values='Unique Count', index='Validation(M)', columns='FY_chk', aggfunc='sum', fill_value=0)
+        pt1 = pt1.reindex(columns=fy_cols, fill_value=0)
+        pt1['Total'] = pt1.sum(axis=1)
         
-        with col_sum:
-            st.subheader("Count of observations noted in")
-            pt1 = pd.pivot_table(cumulative_df, values='Unique Count', index='Validation(M)', columns='FY_chk', aggfunc='sum', fill_value=0)
-            pt1 = pt1.reindex(columns=fy_cols, fill_value=0)
-            pt1['Total'] = pt1.sum(axis=1)
-            
-            display_rows = [
-                'Remediated and Validated', 'Remediated and Pending validation', 'Remediated and Pending validation, LARS not updated',
-                'Not Due', 'Date not updated in LARS', 'Near Due', 'Overdue'
-            ]
-            pt1 = pt1.reindex(index=display_rows, fill_value=0)
-            
-            total_row = pt1.sum(axis=0)
-            total_row.name = 'Total observation'
-            pt1 = pd.concat([pd.DataFrame([total_row]), pt1])
-            
-            styled_pt1 = pt1.style.apply(style_totals_row, axis=1).set_table_styles(header_styles).format("{:.0f}")
-            st.dataframe(styled_pt1, use_container_width=True)
-
-        with col_overdue:
-            st.subheader("Overdue Status")
-            pt_overdue = create_summary_pivot(cumulative_df, "Overdue")
-            styled_overdue = pt_overdue.style.apply(style_totals_row, axis=1).set_table_styles(header_styles).format({c: "{:.0f}" for c in pt_overdue.columns if c != 'Status'})
-            st.dataframe(styled_overdue, use_container_width=True)
-            
-        with col_near:
-            st.subheader("Near Due Status")
-            pt_near = create_summary_pivot(cumulative_df, "Near Due")
-            styled_near = pt_near.style.apply(style_totals_row, axis=1).set_table_styles(header_styles).format({c: "{:.0f}" for c in pt_near.columns if c != 'Status'})
-            st.dataframe(styled_near, use_container_width=True)
-
-        # --- Dashboard Layout (Row 2: Detailed Item Lists) ---
-        st.divider()
-        st.header("Detailed Observation Breakdown")
+        display_rows = [
+            'Remediated and Validated', 'Remediated and Pending validation', 'Remediated and Pending validation, LARS not updated',
+            'Not Due', 'Date not updated in LARS', 'Near Due', 'Overdue'
+        ]
+        pt1 = pt1.reindex(index=display_rows, fill_value=0)
         
-        dt_col1, dt_col2 = st.columns(2)
+        total_row = pt1.sum(axis=0)
+        total_row.name = 'Total observation'
+        pt1 = pd.concat([pd.DataFrame([total_row]), pt1])
         
-        with dt_col1:
-            st.subheader("🚨 Overdue Details")
-            overdue_details = create_details_table(cumulative_df, "Overdue")
-            if not overdue_details.empty:
-                styled_ov_det = overdue_details.style.apply(style_totals_row, axis=1).set_table_styles(header_styles).format({'Total': '{:.1f}'})
-                st.dataframe(styled_ov_det, use_container_width=True, hide_index=True)
-            else:
-                st.info("No Overdue items found.")
+        styled_pt1 = apply_global_table_styles(pt1.style.apply(style_totals_row, axis=1)).format("{:.0f}")
+        st.dataframe(styled_pt1, use_container_width=True)
 
-        with dt_col2:
-            st.subheader("⚠️ Near Due Details")
-            near_details = create_details_table(cumulative_df, "Near Due")
-            if not near_details.empty:
-                styled_nd_det = near_details.style.apply(style_totals_row, axis=1).set_table_styles(header_styles).format({'Total': '{:.1f}'})
-                st.dataframe(styled_nd_det, use_container_width=True, hide_index=True)
-            else:
-                st.info("No Near Due items found.")
+    with col_overdue:
+        st.subheader("Overdue Status")
+        pt_overdue = create_summary_pivot(cumulative_df, "Overdue")
+        styled_overdue = apply_global_table_styles(pt_overdue.style.apply(style_totals_row, axis=1)).format({c: "{:.0f}" for c in pt_overdue.columns if c != 'Status'})
+        st.dataframe(styled_overdue, use_container_width=True)
+        
+    with col_near:
+        st.subheader("Near Due Status")
+        pt_near = create_summary_pivot(cumulative_df, "Near Due")
+        styled_near = apply_global_table_styles(pt_near.style.apply(style_totals_row, axis=1)).format({c: "{:.0f}" for c in pt_near.columns if c != 'Status'})
+        st.dataframe(styled_near, use_container_width=True)
+
+    # --- ROW 3: Detailed Observation Lists ---
+    st.divider()
+    st.header("Detailed Observation Breakdown")
+    
+    dt_col1, dt_col2 = st.columns(2)
+    
+    with dt_col1:
+        st.subheader("🚨 Overdue Details")
+        overdue_details = create_details_table(cumulative_df, "Overdue")
+        if not overdue_details.empty:
+            styled_ov_det = apply_global_table_styles(overdue_details.style.apply(style_totals_row, axis=1)).format({'Total': '{:.1f}'})
+            st.dataframe(styled_ov_det, use_container_width=True, hide_index=True)
+        else:
+            st.info("No Overdue items found.")
+
+    with dt_col2:
+        st.subheader("⚠️ Near Due Details")
+        near_details = create_details_table(cumulative_df, "Near Due")
+        if not near_details.empty:
+            styled_nd_det = apply_global_table_styles(near_details.style.apply(style_totals_row, axis=1)).format({'Total': '{:.1f}'})
+            st.dataframe(styled_nd_det, use_container_width=True, hide_index=True)
+        else:
+            st.info("No Near Due items found.")
