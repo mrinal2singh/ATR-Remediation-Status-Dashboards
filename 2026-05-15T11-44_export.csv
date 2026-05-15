@@ -1,0 +1,17 @@
+﻿Allocated,Audit Area,Observation Title,Total
+Sameeksha,BCP/ DR,Absence of Business Continuity Plan (BCP) Drill,1
+Sameeksha,BCP/ DR,Absence of Business Impact Analysis (BIA) and Risk Assessment,1
+Sameeksha,BCP/ DR,Absence of Disaster Recovery (DR) Drill,1
+Sameeksha,BCP/ DR,Lack of Formal Training and Awareness Program for BCP/DR,1
+Sameeksha,Network security,Gaps in IT Infrastructure Documentation and Implementation,1
+Sameeksha,Network security,Guest Wi-Fi Access Provisioning Process Not Formally Documented,1
+Sameeksha,Network security,Incomplete Deployment Location Details in Network Device Inventory,1
+Sameeksha,Network security,Misalignment Between Zscaler Documentation and Current Bring Your Own Device (BYOD) Access Practice,1
+Sameeksha,Network security,SOP for Security Operations Center (SOC) Lacks Defined Performance Monitoring Thresholds,1
+Sameeksha,Network security,Undefined Alert Management Workflow,1
+Sameeksha,User access management,Absence of Periodic User Access Recertification,1
+Sameeksha,User access management,Absence of an Approved Role Matrix and Documented Permission Descriptions,1
+Sameeksha,User access management,Decentralized User Access Management in DevRev,1
+Sameeksha,User access management,Inadequate User Access Management SOP Coverage for DevRev and Absence of Third-Party Approval Controls,1
+Sameeksha Total,,,14
+Total,,,14

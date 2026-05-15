@@ -1,0 +1,48 @@
+﻿Allocated,Audit Area,Observation Title,Total
+Garima,Customer Service - Financial Services,Delay in update of loan status on the Paytm app,1
+Garima,Inventory & Distribution - Offline Payments,Devices held by inactive merchants,1
+Garima,Inventory & Distribution - Offline Payments,Insurance policy endorsement not done for select hubs; GST certificate not available for one hub,1
+Garima,Legal Contracts & Litigations,Contracts not executed in select cases although required as per the purchase policy,1
+Garima,Procurement & Spends review - Marketing,Under utilization of agreed services from retainers,1
+Garima,"Revenue Assurance (including revenue accounting, cost center mapping etc ) - Financial Services",Revenue Assurance SOPs on lending business not updated with latest commercials,1
+Garima Total,,,6
+Jatin,Customer Service - Travel,Deficiencies in Standard Operating Procedures (SOPs) – Travel CST,1
+Jatin,Customer Service - Travel,Inadequate automation and controls in ticket modification/ cancellation workflow(1/2),1
+Jatin,Customer Service - Travel,Inadequate bot replies to the customers,1
+Jatin,Customer Service - Travel,Inadequate controls and quality issues in bulk customer response,1
+Jatin,Customer Service - Travel,Inadequate quality control (QC) for CST agents,1
+Jatin,Customer Service - Travel,No Access Controls and Monitoring over Flight Booking & Refund Panel (Customer Data Exposure Risk),1
+Jatin,Promotions/ Cashback - Offline Payments,Absence of centralised tool to monitor campaign creation and product tasks,1
+Jatin,Promotions/ Cashback - Offline Payments,Aged billed and unbilled receivable from banks/ brands,1
+Jatin,Promotions/ Cashback - Offline Payments,Configuration Gaps noted in price and offer constructs,1
+Jatin,Promotions/ Cashback - Offline Payments,Inadequate governance and system controls over price/ offer configurations,1
+Jatin,Risk Operations - Financial Services,Loan applicant/ borrower PII Data fetched from Bureau not adequately masked and purged in OCL database,1
+Jatin,Risk Operations - Financial Services,Personal Loan Policy does not prescribe a cut-off timeline for loan disbursement,1
+Jatin,Risk Operations - Offline Payments,Discrepancy in EDC node rule design; Risk assessment not performed for new EDC product code,1
+Jatin,Risk Operations - Offline Payments,Gaps noted in Geo fencing ‘reject rule’ functioning and review of ‘monitoring rules’,1
+Jatin Total,,,14
+Mrinal,Collection operations & Payouts - Financial Services,Allocation of tele-calling cases to agents without required language capability,1
+Mrinal,Collection operations & Payouts - Financial Services,Anomalies in field agent visit reporting by collection agency,1
+Mrinal,Collection operations & Payouts - Financial Services,Manual & non-standardized process of allocation for delinquent loan cases to collection agencies,1
+Mrinal,Collection operations & Payouts - Financial Services,No action by collection agencies on aged overdue merchant loan accounts despite allocation,1
+Mrinal,Collection operations & Payouts - Financial Services,Operational and data Handling issues at collection agencies,1
+Mrinal Total,,,5
+Muskan,"Book closure, Recon",Revisit existing Contingent Liability and Provision assessment process for claims filed against the Company,1
+Muskan,FSE payouts - Offline Payments (FSE Field Sales Staff),Erroneous points awarded to FSEs due manual calculations,1
+Muskan,FSE payouts - Offline Payments (FSE Field Sales Staff),Operational gaps in high GMV incentive paid to FSEs,1
+Muskan,Fixed Assets,Strengthen controls around the physical verification process,1
+Muskan,Fixed Assets,Variances in fixed asset register and general ledger reconciliation,1
+Muskan,Merchant Onboarding (incl. Contractual Obligations and Product Interfaces) - Offline Payments,Absence of merchant Re-KYC process and trade license expiry date management,1
+Muskan,Related Party Transactions,Operational Gaps noted around flagging of related parties in the vendor master maintained in SAP,1
+Muskan,"Risk Operations - Bill Payments & Travel Vertical (Q3, 2025-26)",Manual tracking of transaction monitoring alerts; No reconciliation to ensure review completeness,1
+Muskan,"Risk Operations - Bill Payments & Travel Vertical (Q3, 2025-26)",Quality checks on closed alerts not performed,0
+Muskan,"Risk Operations - Bill Payments & Travel Vertical (Q3, 2025-26)",Review Card/Device related transaction monitoring rules for Weekly/Monthly threshold configuration,1
+Muskan,"Risk Operations - Bill Payments & Travel Vertical (Q3, 2025-26)",Risk rules alerts (device monitoring) for select dates not generated and not reviewed,0
+Muskan Total,,,9
+Oshin,Review of TPAP arrangements with banking partners (UPI) - Offline Payments,Gaps in compliance with contractual obligations on PEP disclosures,1
+Oshin,Review of TPAP arrangements with banking partners (UPI) - Offline Payments,Transfer-Out Functionality Not Adequately Enabled for UPI LITE Product,1
+Oshin Total,,,2
+Pankaj,Compliance with RBI regulations (DLG etc ) - Financial Services,Discrepancies in link to Lender’s (RE) website hosted on Paytm website (for select lenders & loan products) - Para 8,1
+Pankaj,Compliance with RBI regulations (DLG etc ) - Financial Services,Gaps in Nodal Grievance Redressal officer details provided on Paytm website and app (Para 11),1
+Pankaj Total,,,2
+Total,,,38
