@@ -180,12 +180,22 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             missing_cols = [col for col in required_cols if col not in cumulative_df.columns]
             
             if not missing_cols:
-                group_counts = cumulative_df.groupby(required_cols, dropna=False)['FY_chk'].transform('size')
-                cumulative_df['Unique Count'] = 1.0 / group_counts
+                # Find Unique Observation Column early
                 obs_col_name = next((col for col in cumulative_df.columns if 'unique observation' in col.lower()), None)
                 
                 if obs_col_name:
                     obs_series = cumulative_df[obs_col_name].astype(str).str.strip().str.replace('.0', '', regex=False)
+                    
+                    # 🔴 FILTER OUT 1166 and 1167 rows immediately 🔴
+                    mask_to_keep = ~obs_series.isin(['1166', '1167'])
+                    cumulative_df = cumulative_df[mask_to_keep].reset_index(drop=True)
+                    obs_series = obs_series[mask_to_keep].reset_index(drop=True)
+                
+                # Now calculate Unique Counts with filtered dataframe
+                group_counts = cumulative_df.groupby(required_cols, dropna=False)['FY_chk'].transform('size')
+                cumulative_df['Unique Count'] = 1.0 / group_counts
+                
+                if obs_col_name:
                     zero_count_ids = [
                         '1189', '1168', '759', '354', '353', '137', '136', '135', '1165', '1164', '1163', '771', '757', '717', '698'
                     ]
@@ -286,6 +296,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             st.write("Applying Allocation mapping...")
             if obs_col_name: 
                 allocation_mapping = {
+                    '1318': 'Muskan', '1317': 'Muskan', '1316': 'Muskan', '1315': 'Muskan', '1314': 'Muskan', '1313': 'Muskan',
                     '1230': 'Muskan', '1227': 'Jatin', '1222': 'Jatin', '1220': 'Jatin', '1208': 'Muskan', '1200': 'Muskan', '1195': 'Validated', 
                     '1189': 'Validated', '1188': 'Validated', '1187': 'Validated', '1186': 'Validated', '1185': 'Validated', '1184': 'Validated', 
                     '1183': 'Validated', '1182': 'Validated', '1181': 'Validated', '1168': 'Validated', '1149': 'Validated', '1146': 'Validated', 
@@ -309,8 +320,8 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '1119': 'Garima', '1118': 'Garima', '1116': 'Garima', '1113': 'Garima', '1103': 'Garima', '1102': 'Garima', '1101': 'Garima', 
                     '1099': 'Garima', '1098': 'Garima', '1097': 'Garima', '1079': 'Garima', '1078': 'Garima', '1076': 'Garima', '1071': 'Validated', 
                     '1066': 'Sameeksha', '967': 'Garima', '963': 'Garima', '958': 'Garima', '955': 'Validated', '949': 'Garima', '947': 'Garima', 
-                    '838': 'Validated', '769': 'Mrinal', '757': 'Garima', '717': 'Validated', '706': 'Validated', '698': 'Shakti Singh', '685': 'Mukul', 
-                    '684': 'Mukul', '682': 'Validated', '520': 'Oshin', '519': 'Oshin', '518': 'Oshin', '517': 'Validated', '514': 'Validated', 
+                    '838': 'Validated', '769': 'Mrinal', '757': 'Garima', '717': 'Validated', '706': 'Validated', '698': 'Shakti Singh', '685': 'Garima', 
+                    '684': 'Garima', '682': 'Validated', '520': 'Oshin', '519': 'Oshin', '518': 'Oshin', '517': 'Validated', '514': 'Validated', 
                     '446': 'Validated', '443': 'Validated', '390': 'Validated', '389': 'Validated', '388': 'Validated', '387': 'Validated', '380': 'Oshin', 
                     '379': 'Oshin', '378': 'Oshin', '376': 'Validated', '373': 'Validated', '199': 'Muskan', '197': 'Muskan', '196': 'Validated', 
                     '195': 'Validated', '174': 'Muskan', '173': 'Muskan', '89': 'Validated', '46': 'Muskan', '1027': 'Validated', '1026': 'Validated', 
@@ -403,7 +414,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '234': 'Validated', '233': 'Validated', '232': 'Validated', '231': 'Validated', '230': 'Validated', '229': 'Validated', 
                     '228': 'Validated', '227': 'Validated', '226': 'Validated', '225': 'Validated', '224': 'Validated', '223': 'Validated', 
                     '222': 'Validated', '221': 'Validated', '220': 'Validated', '219': 'Validated', '218': 'Validated', '217': 'Validated', 
-                    '216': 'Validated', '215': 'Validated', '214': 'Validated', '213': 'Validated', '212': 'Yogesh Pundir', '211': 'Validated', 
+                    '216': 'Validated', '215': 'Validated', '214': 'Validated', '213': 'Validated', '212': 'Muskan', '211': 'Validated', 
                     '210': 'Validated', '209': 'Validated', '208': 'Validated', '207': 'Validated', '206': 'Validated', '205': 'Validated', 
                     '204': 'Validated', '203': 'Validated', '202': 'Validated', '201': 'Validated', '200': 'Validated', '198': 'Validated', 
                     '194': 'Validated', '193': 'Validated', '192': 'Validated', '191': 'Validated', '190': 'Validated', '189': 'Validated', 
@@ -445,7 +456,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '1223': 'Jatin', '1221': 'Jatin', '1219': 'Jatin', '1218': 'Mrinal', '1217': 'Mrinal', '1216': 'Mrinal', '1215': 'Mrinal', 
                     '1214': 'Mrinal', '1212': 'Mrinal', '1211': 'Garima', '1210': 'Garima', '1209': 'Muskan', '1207': 'Muskan', '1206': 'Muskan', 
                     '1203': 'Muskan', '1202': 'Muskan', '1198': 'Muskan', '1197': 'Muskan', '1193': 'Muskan', '1180': 'Muskan', '1175': 'Muskan', 
-                    '1167': 'Muskan', '1166': 'Muskan', '1165': 'Muskan', '1164': 'Muskan', '1163': 'Muskan', '1162': 'Sameeksha', 
+                    '1165': 'Muskan', '1164': 'Muskan', '1163': 'Muskan', '1162': 'Sameeksha', 
                     '1161': 'Sameeksha', '1160': 'Sameeksha', '1159': 'Sameeksha', '1158': 'Sameeksha', '1157': 'Sameeksha', '1156': 'Sameeksha', 
                     '1155': 'Sameeksha', '1154': 'Sameeksha', '1153': 'Sameeksha', '1152': 'Sameeksha', '1151': 'Sameeksha', '1144': 'Garima', 
                     '1120': 'Jatin', '1115': 'Shakti Singh', '1112': 'Shakti Singh', '1111': 'Jatin', '1110': 'Shakti Singh', '1104': 'Jatin', 
@@ -461,10 +472,17 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '751': 'Muskan', '731': 'Muskan', '729': 'Muskan', '705': 'Oshin', '702': 'Mrinal', '700': 'Mrinal', '694': 'Muskan', 
                     '691': 'Mrinal', '690': 'Mrinal', '689': 'Muskan', '688': 'Mrinal', '687': 'Mrinal', '680': 'Shakti Singh', '679': 'Shakti Singh', 
                     '677': 'Shakti Singh', '676': 'Shakti Singh', '675': 'Shakti Singh', '674': 'Shakti Singh', '673': 'Shakti Singh', 
-                    '671': 'Shakti Singh', '663': 'Muskan', '644': 'Muskan', '550': 'Garima', '547': 'Garima', '546': 'Garima', '291': 'Mukul', 
-                    '271': 'Shakti Singh', '239': 'Yogesh Pundir', '3': 'Muskan', '1308': 'Garima', '1307': 'Garima', '1306': 'Garima'
+                    '671': 'Shakti Singh', '663': 'Muskan', '644': 'Muskan', '550': 'Garima', '547': 'Garima', '546': 'Garima', '291': 'Garima', 
+                    '271': 'Shakti Singh', '239': 'Muskan', '3': 'Muskan', '1308': 'Garima', '1307': 'Garima', '1306': 'Garima'
                 }
                 cumulative_df['Allocated'] = obs_series.map(allocation_mapping).fillna('Unallocated')
+                
+                # Further dynamic replace for specific names if they seep into datasets
+                cumulative_df['Allocated'] = cumulative_df['Allocated'].replace({
+                    'Yogesh Pundir': 'Muskan', 
+                    'Mukul Tyagi': 'Garima',
+                    'Mukul': 'Garima'
+                })
             else:
                 st.warning("Could not find 'Unique observation No' to map Allocations.")
                 cumulative_df['Allocated'] = 'Unallocated'
@@ -580,7 +598,6 @@ if st.session_state['cumulative_df'] is not None:
         all_combos = df[['Team', 'Allocated']].drop_duplicates().set_index(['Team', 'Allocated'])
         pt = all_combos.join(pt, how='left').fillna(0)
         pt['Total'] = pt.sum(axis=1)
-        pt['Status'] = ''
         
         pt.loc[('Total', ''), :] = pt.sum(axis=0, numeric_only=True)
         pt.fillna('', inplace=True) 
@@ -638,13 +655,13 @@ if st.session_state['cumulative_df'] is not None:
     with col_overdue:
         st.subheader("Overdue Status")
         pt_overdue = create_summary_pivot(cumulative_df, "Overdue")
-        styled_overdue = apply_global_table_styles(pt_overdue.style.apply(style_totals_row, axis=1)).format({c: "{:.0f}" for c in pt_overdue.columns if c != 'Status'})
+        styled_overdue = apply_global_table_styles(pt_overdue.style.apply(style_totals_row, axis=1)).format("{:.0f}")
         st.dataframe(styled_overdue, use_container_width=True)
         
     with col_near:
         st.subheader("Near Due Status")
         pt_near = create_summary_pivot(cumulative_df, "Near Due")
-        styled_near = apply_global_table_styles(pt_near.style.apply(style_totals_row, axis=1)).format({c: "{:.0f}" for c in pt_near.columns if c != 'Status'})
+        styled_near = apply_global_table_styles(pt_near.style.apply(style_totals_row, axis=1)).format("{:.0f}")
         st.dataframe(styled_near, use_container_width=True)
 
     # --- ROW 3: Detailed Observation Lists ---
