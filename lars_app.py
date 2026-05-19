@@ -272,6 +272,43 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                 
             cumulative_df['Validation(M)'] = cumulative_df.apply(apply_near_due_override, axis=1)
 
+            st.write("Applying explicit overrides for Validation(M)...")
+            if obs_col_name:
+                validation_overrides = {
+                    '1228': 'Remediated and Pending validation',
+                    '1226': 'Remediated and Pending validation',
+                    '1224': 'Remediated and Pending validation',
+                    '1219': 'Remediated and Pending validation',
+                    '1218': 'Remediated and Pending validation',
+                    '1217': 'Remediated and Pending validation',
+                    '1216': 'Remediated and Pending validation',
+                    '1215': 'Remediated and Pending validation',
+                    '1214': 'Remediated and Pending validation',
+                    '1210': 'Remediated and Pending validation',
+                    '1198': 'Remediated and Pending validation',
+                    '1193': 'Remediated and Pending validation',
+                    '1180': 'Remediated and Pending validation',
+                    '1175': 'Remediated and Pending validation',
+                    '1144': 'Remediated and Pending validation',
+                    '1120': 'Remediated and Pending validation',
+                    '1111': 'Remediated and Pending validation',
+                    '1104': 'Remediated and Pending validation',
+                    '1093': 'Remediated and Pending validation',
+                    '1073': 'Remediated and Pending validation',
+                    '1062': 'Remediated and Pending validation',
+                    '1041': 'Remediated and Validated',
+                    '1040': 'Remediated and Validated',
+                    '976': 'Remediated and Pending validation',
+                    '951': 'Remediated and Pending validation',
+                    '841': 'Remediated and Pending validation',
+                    '837': 'Remediated and Pending validation',
+                    '751': 'Remediated and Pending validation',
+                    '949': 'Remediated and Pending validation'
+                }
+                for obs_id, new_val_status in validation_overrides.items():
+                    mask_val_override = (obs_series == obs_id)
+                    cumulative_df.loc[mask_val_override, 'Validation(M)'] = new_val_status
+
             st.write("Applying Team assignment logic...")
             lead_auditor_col = next((col for col in cumulative_df.columns if 'lead auditor' in col.lower()), None)
             reviewer_col = next((col for col in cumulative_df.columns if 'reviewer' in col.lower()), None)
@@ -297,6 +334,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             if obs_col_name: 
                 allocation_mapping = {
                     '1318': 'Muskan', '1317': 'Muskan', '1316': 'Muskan', '1315': 'Muskan', '1314': 'Muskan', '1313': 'Muskan',
+                    '1308': 'Mrinal', '1307': 'Mrinal', '1306': 'Mrinal', '1305': 'Mrinal',
                     '1230': 'Muskan', '1227': 'Jatin', '1222': 'Jatin', '1220': 'Jatin', '1208': 'Muskan', '1200': 'Muskan', '1195': 'Validated', 
                     '1189': 'Validated', '1188': 'Validated', '1187': 'Validated', '1186': 'Validated', '1185': 'Validated', '1184': 'Validated', 
                     '1183': 'Validated', '1182': 'Validated', '1181': 'Validated', '1168': 'Validated', '1149': 'Validated', '1146': 'Validated', 
@@ -313,7 +351,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '1295': 'Sameeksha', '1294': 'Sameeksha', '1293': 'Sameeksha', '1292': 'Sameeksha', '1291': 'Sameeksha', '1290': 'Sameeksha', 
                     '1289': 'Sameeksha', '1288': 'Sameeksha', '1287': 'Sameeksha', '1286': 'Sameeksha', '1285': 'Sameeksha', '1284': 'Sameeksha', 
                     '1283': 'Sameeksha', '1282': 'Sameeksha', '1281': 'Sameeksha', '1275': 'Sameeksha', '1274': 'Sameeksha', '1273': 'Sameeksha', 
-                    '1272': 'Sameeksha', '1271': 'Sameeksha', '1270': 'Sameeksha', '1269': 'Sameeksha', '1305': 'Garima', '1297': 'Garima', 
+                    '1272': 'Sameeksha', '1271': 'Sameeksha', '1270': 'Sameeksha', '1269': 'Sameeksha', '1297': 'Garima', 
                     '1296': 'Garima', '1276': 'Garima', '1263': 'Garima', '1262': 'Garima', '1261': 'Garima', '1260': 'Garima', '1259': 'Garima', 
                     '1258': 'Garima', '1257': 'Garima', '1229': 'Jatin', '1213': 'Mrinal', '1148': 'Garima', '1147': 'Garima', '1142': 'Garima', 
                     '1137': 'Garima', '1133': 'Garima', '1129': 'Garima', '1128': 'Garima', '1126': 'Garima', '1125': 'Garima', '1124': 'Garima', 
@@ -473,7 +511,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '691': 'Mrinal', '690': 'Mrinal', '689': 'Muskan', '688': 'Mrinal', '687': 'Mrinal', '680': 'Shakti Singh', '679': 'Shakti Singh', 
                     '677': 'Shakti Singh', '676': 'Shakti Singh', '675': 'Shakti Singh', '674': 'Shakti Singh', '673': 'Shakti Singh', 
                     '671': 'Shakti Singh', '663': 'Muskan', '644': 'Muskan', '550': 'Garima', '547': 'Garima', '546': 'Garima', '291': 'Garima', 
-                    '271': 'Shakti Singh', '239': 'Muskan', '3': 'Muskan', '1308': 'Garima', '1307': 'Garima', '1306': 'Garima'
+                    '271': 'Shakti Singh', '239': 'Muskan', '3': 'Muskan'
                 }
                 cumulative_df['Allocated'] = obs_series.map(allocation_mapping).fillna('Unallocated')
                 
