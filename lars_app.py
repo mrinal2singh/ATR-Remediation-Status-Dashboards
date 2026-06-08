@@ -337,7 +337,10 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             if obs_col_name: 
                 allocation_mapping = {
                     '1318': 'Muskan', '1317': 'Muskan', '1316': 'Muskan', '1315': 'Muskan', '1314': 'Muskan', '1313': 'Muskan',
-                    '1308': 'Mrinal', '1307': 'Mrinal', '1306': 'Mrinal', '1305': 'Mrinal',
+                    '1308': 'Mrinal', '1307': 'Mrinal', '1306': 'Mrinal', '1305': 'Mrinal', '1345': 'Garima', '1349': 'Muskan','1321': 'Garima',
+                    '1320': 'Garima', '1319': 'Garima', '1349': 'Muskan', '1321': 'Garima', '1340': 'Jatin', '1341': 'Jatin', '1342': 'Jatin',
+                    '1339': 'Jatin', '1338': 'Jatin', '1337': 'Jatin', '1346': 'Garima', '1344': 'Garima', '1343': 'Garima', '1322': 'Garima',
+                    '1351': 'Muskan', '1350': 'Muskan', '1347': 'Muskan', '1348': 'Muskan',
                     '1230': 'Muskan', '1227': 'Jatin', '1222': 'Jatin', '1220': 'Jatin', '1208': 'Muskan', '1200': 'Muskan', '1195': 'Validated', 
                     '1189': 'Validated', '1188': 'Validated', '1187': 'Validated', '1186': 'Validated', '1185': 'Validated', '1184': 'Validated', 
                     '1183': 'Validated', '1182': 'Validated', '1181': 'Validated', '1168': 'Validated', '1149': 'Validated', '1146': 'Validated', 
