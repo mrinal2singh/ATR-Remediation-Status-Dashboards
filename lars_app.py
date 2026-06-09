@@ -337,7 +337,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
             if obs_col_name: 
                 allocation_mapping = {
                     '1318': 'Muskan', '1317': 'Muskan', '1316': 'Muskan', '1315': 'Muskan', '1314': 'Muskan', '1313': 'Muskan',
-                    '1308': 'Mrinal', '1307': 'Mrinal', '1306': 'Mrinal', '1305': 'Mrinal', '1345': 'Garima', '1349': 'Muskan','1321': 'Garima',
+                    '1308': 'Mrinal', '1307': 'Mrinal', '1306': 'Mrinal', '1305': 'Mrinal', '1345': 'Garima','1321': 'Garima',
                     '1320': 'Oshin', '1319': 'Oshin', '1321': 'Oshin', '1340': 'Jatin', '1341': 'Jatin', '1342': 'Jatin',
                     '1339': 'Jatin', '1338': 'Jatin', '1337': 'Jatin', '1346': 'Garima', '1344': 'Garima', '1343': 'Garima', '1322': 'Oshin',
                     '1351': 'Muskan', '1350': 'Muskan', '1347': 'Muskan', '1348': 'Muskan',
@@ -518,7 +518,7 @@ if st.button("Process, Merge Files and Generate Dashboard", type="primary", use_
                     '836': 'Oshin', '835': 'Oshin', '834': 'Oshin', '771': 'Mrinal', '770': 'Mrinal', '768': 'Mrinal', '755': 'Muskan', 
                     '751': 'Muskan', '731': 'Muskan', '729': 'Muskan', '705': 'Oshin', '702': 'Mrinal', '700': 'Mrinal', '694': 'Muskan', 
                     '691': 'Mrinal', '690': 'Mrinal', '689': 'Muskan', '688': 'Mrinal', '687': 'Mrinal', '680': 'Shakti Singh', '679': 'Shakti Singh', 
-                    '677': 'Shakti Singh', '676': 'Shakti Singh', '675': 'Shakti Singh', '674': 'Shakti Singh', '673': 'Shakti Singh', 
+                    '677': 'Shakti Singh', '676': 'Shakti Singh', '675': 'Shakti Singh', '674': 'Shakti Singh', '673': 'Shakti Singh', '1349': 'Muskan',
                     '671': 'Shakti Singh', '663': 'Muskan', '644': 'Muskan', '550': 'Garima', '547': 'Garima', '546': 'Garima', '291': 'Garima', 
                     '271': 'Shakti Singh', '239': 'Muskan', '3': 'Muskan'
                 }
